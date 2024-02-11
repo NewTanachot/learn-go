@@ -3,6 +3,9 @@ package main
 import (
 	// "fmt"
 	"github.com/NewTanachot/learn-go/book"
+	// "github.com/NewTanachot/learn-go/book-db"
+	"github.com/NewTanachot/learn-go/database"
+	"github.com/NewTanachot/learn-go/middleware"
 	"github.com/gofiber/fiber/v2"
 	"net/url"
 )
@@ -11,11 +14,17 @@ func main() {
 
 	app := fiber.New()
 
+	app.Use(middleware.TestMiddleware)
+
+	db.Connect()
+
 	app.Get("books", getBooks)
 	app.Get("book/:name", getBookById)
 	app.Post("book", insertBook)
 	app.Put("book", updateBook)
 	app.Delete("book/:name", deleteBook)
+
+	app.Use(middleware.TestMiddleware)
 
 	app.Listen(":3000")
 }
