@@ -1,19 +1,30 @@
 package main
 
 import (
-	"github.com/NewTanachot/learn-go/book"
-	"github.com/NewTanachot/learn-go/middleware"
-	"github.com/NewTanachot/learn-go/product"
-	"github.com/gofiber/fiber/v2"
 	"net/url"
 	"strconv"
+
+	"github.com/NewTanachot/learn-go/book"
+	db "github.com/NewTanachot/learn-go/database"
+	"github.com/NewTanachot/learn-go/middleware"
+	"github.com/NewTanachot/learn-go/model"
+	"github.com/NewTanachot/learn-go/product"
+	"github.com/gofiber/fiber/v2"
+	"gorm.io/gorm"
 )
+
+var dbContext *gorm.DB
 
 func main() {
 
+	dbContext = db.GormConnect()
+	db.MigrateDb(dbContext)
+
 	app := fiber.New()
 
-	app.Use(middleware.TestMiddleware)
+	// app.Use(middleware.TestMiddleware)
+
+	app.Post("gorm/book", createBookGorm)
 
 	app.Get("book", getBooks)
 	app.Get("book/:name", getBookById)
@@ -32,68 +43,24 @@ func main() {
 	app.Listen(":3000")
 }
 
-// g is lower case. So this is private function
-func getBookById(context *fiber.Ctx) error {
-	name := context.Params("name")
-	var decodedName, err = url.QueryUnescape(name)
+func createBookGorm(context *fiber.Ctx) error {
+	gormBookRequest := new(model.GormBook)
+	error := context.BodyParser(gormBookRequest)
 
-	if err != nil {
-		return err
-	}
-
-	book := book.GetBookById(&decodedName)
-	var result = context.JSON(book)
-
-	return result
-}
-
-func getBooks(context *fiber.Ctx) error {
-	books := book.GetBooks()
-	var result = context.JSON(books)
-
-	return result
-}
-
-func insertBook(context *fiber.Ctx) error {
-	newBook := new(book.Book)
-	error := context.BodyParser(newBook)
+	// bookEntity := model.GormBook{
+	// 	Name:        gormBookRequest.Name,
+	// 	Author:      gormBookRequest.Author,
+	// 	Description: gormBookRequest.Description,
+	// 	Price:       gormBookRequest.Price,
+	// }
 
 	if error != nil {
 		return context.SendStatus(fiber.StatusBadRequest)
 	}
 
-	bookResponse := book.InsertBook(newBook)
-	result := context.JSON(bookResponse)
+	result := dbContext.Create(gormBookRequest)
 
-	return result
-}
-
-func updateBook(context *fiber.Ctx) error {
-	updateBook := new(book.Book)
-	error := context.BodyParser(updateBook)
-
-	if error != nil {
-		return context.SendStatus(fiber.StatusBadRequest)
-	}
-
-	bookResponse := book.UpdateBook(updateBook)
-	result := context.JSON(bookResponse)
-
-	return result
-}
-
-func deleteBook(context *fiber.Ctx) error {
-	name := context.Params("name")
-	var decodedName, err = url.QueryUnescape(name)
-
-	if err != nil {
-		return context.SendStatus(fiber.StatusBadRequest)
-	}
-
-	idResponse := book.DeleteBook(&decodedName)
-	result := context.JSON(idResponse)
-
-	return result
+	return context.Status(fiber.StatusCreated).JSON(result)
 }
 
 // region Product
@@ -179,3 +146,67 @@ func deleteProduct(context *fiber.Ctx) error {
 }
 
 // endregion
+
+// g is lower case. So this is private function
+func getBookById(context *fiber.Ctx) error {
+	name := context.Params("name")
+	var decodedName, err = url.QueryUnescape(name)
+
+	if err != nil {
+		return err
+	}
+
+	book := book.GetBookById(&decodedName)
+	var result = context.JSON(book)
+
+	return result
+}
+
+func getBooks(context *fiber.Ctx) error {
+	books := book.GetBooks()
+	var result = context.JSON(books)
+
+	return result
+}
+
+func insertBook(context *fiber.Ctx) error {
+	newBook := new(book.Book)
+	error := context.BodyParser(newBook)
+
+	if error != nil {
+		return context.SendStatus(fiber.StatusBadRequest)
+	}
+
+	bookResponse := book.InsertBook(newBook)
+	result := context.JSON(bookResponse)
+
+	return result
+}
+
+func updateBook(context *fiber.Ctx) error {
+	updateBook := new(book.Book)
+	error := context.BodyParser(updateBook)
+
+	if error != nil {
+		return context.SendStatus(fiber.StatusBadRequest)
+	}
+
+	bookResponse := book.UpdateBook(updateBook)
+	result := context.JSON(bookResponse)
+
+	return result
+}
+
+func deleteBook(context *fiber.Ctx) error {
+	name := context.Params("name")
+	var decodedName, err = url.QueryUnescape(name)
+
+	if err != nil {
+		return context.SendStatus(fiber.StatusBadRequest)
+	}
+
+	idResponse := book.DeleteBook(&decodedName)
+	result := context.JSON(idResponse)
+
+	return result
+}
