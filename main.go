@@ -18,13 +18,18 @@ var dbContext *gorm.DB
 func main() {
 
 	dbContext = db.GormConnect()
-	db.MigrateDb(dbContext)
+	db.MigrateLearnGorm(dbContext)
 
 	app := fiber.New()
 
-	// app.Use(middleware.TestMiddleware)
+	app.Use(middleware.InterMiddleware)
+	app.Use(middleware.OuterMiddleware)
 
+	app.Get("gorm/book/:id", getBookByIdGorm)
+	app.Get("gorm/book/filter/:filter", getBookFilterGorm)
 	app.Post("gorm/book", createBookGorm)
+	app.Put("gorm/book", updateBookGorm)
+	app.Delete("gorm/book/:id/:hard?", deleteBookGorm)
 
 	app.Get("book", getBooks)
 	app.Get("book/:name", getBookById)
@@ -38,8 +43,6 @@ func main() {
 	app.Put("product", updateProduct)
 	app.Delete("product/:id", deleteProduct)
 
-	app.Use(middleware.TestMiddleware)
-
 	app.Listen(":3000")
 }
 
@@ -47,20 +50,93 @@ func createBookGorm(context *fiber.Ctx) error {
 	gormBookRequest := new(model.GormBook)
 	error := context.BodyParser(gormBookRequest)
 
-	// bookEntity := model.GormBook{
-	// 	Name:        gormBookRequest.Name,
-	// 	Author:      gormBookRequest.Author,
-	// 	Description: gormBookRequest.Description,
-	// 	Price:       gormBookRequest.Price,
-	// }
-
 	if error != nil {
 		return context.SendStatus(fiber.StatusBadRequest)
 	}
 
-	result := dbContext.Create(gormBookRequest)
+	dbContext.Create(gormBookRequest)
 
-	return context.Status(fiber.StatusCreated).JSON(result)
+	return context.SendStatus(fiber.StatusCreated)
+}
+
+func getBookFilterGorm(context *fiber.Ctx) error {
+
+	filter := context.Params("filter")
+
+	booksResponse := new([]model.GormBook)
+	queryResult := dbContext.
+		Where("author = ?", filter).
+		Order("id desc").
+		Find(&booksResponse)
+
+	if queryResult.Error != nil {
+		return context.Status(fiber.StatusBadRequest).JSON(queryResult.Error)
+	}
+
+	return context.JSON(booksResponse)
+}
+
+func getBookByIdGorm(context *fiber.Ctx) error {
+
+	id := context.Params("id")
+	intId, err := strconv.Atoi(id)
+
+	if err != nil {
+		return context.Status(fiber.StatusBadRequest).JSON(err)
+	}
+
+	bookResponse := new(model.GormBook)
+	queryResult := dbContext.First(&bookResponse, intId)
+
+	if queryResult.Error != nil {
+		return context.Status(fiber.StatusBadRequest).JSON(queryResult.Error)
+	}
+
+	return context.JSON(bookResponse)
+}
+
+func updateBookGorm(context *fiber.Ctx) error {
+
+	gormBookRequest := new(model.GormBook)
+	err := context.BodyParser(gormBookRequest)
+
+	if err != nil {
+		return context.Status(fiber.StatusBadRequest).JSON(err)
+	}
+
+	result := dbContext.Save(gormBookRequest)
+
+	if result.Error != nil {
+		return context.Status(fiber.StatusBadRequest).JSON(result.Error)
+	}
+
+	return context.SendStatus(fiber.StatusOK)
+}
+
+func deleteBookGorm(context *fiber.Ctx) error {
+	id := context.Params("id")
+	isHardDelete := context.Params("hard")
+
+	intId, err := strconv.Atoi(id)
+
+	if err != nil {
+		return context.Status(fiber.StatusBadRequest).JSON(err)
+	}
+
+	bookResponse := new(model.GormBook)
+	var response *gorm.DB
+
+	if isHardDelete != "" {
+		response = dbContext.Unscoped().Delete(bookResponse, intId)
+	} else {
+		response = dbContext.Delete(bookResponse, intId)
+	}
+
+	if response.Error != nil {
+		return context.Status(fiber.StatusBadRequest).JSON(response.Error)
+	}
+
+	return context.JSON(bookResponse)
 }
 
 // region Product

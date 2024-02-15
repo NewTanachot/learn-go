@@ -40,7 +40,7 @@ func GormConnect() *gorm.DB {
 	return db
 }
 
-func MigrateDb(db *gorm.DB) {
+func MigrateLearnGorm(db *gorm.DB) {
 
 	err := db.AutoMigrate(&model.GormBook{})
 
