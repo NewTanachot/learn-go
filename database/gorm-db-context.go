@@ -40,9 +40,9 @@ func GormConnect() *gorm.DB {
 	return db
 }
 
-func MigrateLearnGorm(db *gorm.DB) {
+func Migrate(db *gorm.DB) {
 
-	err := db.AutoMigrate(&model.GormBook{})
+	err := db.AutoMigrate(&model.GormBook{}, &model.User{})
 
 	if err != nil {
 		panic(err)

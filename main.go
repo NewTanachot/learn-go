@@ -4,6 +4,7 @@ import (
 	"net/url"
 	"strconv"
 
+	"github.com/NewTanachot/learn-go/auth"
 	"github.com/NewTanachot/learn-go/book"
 	db "github.com/NewTanachot/learn-go/database"
 	"github.com/NewTanachot/learn-go/middleware"
@@ -18,12 +19,14 @@ var dbContext *gorm.DB
 func main() {
 
 	dbContext = db.GormConnect()
-	db.MigrateLearnGorm(dbContext)
+	db.Migrate(dbContext)
 
 	app := fiber.New()
 
 	app.Use(middleware.InterMiddleware)
 	app.Use(middleware.OuterMiddleware)
+
+	app.Post("register", register)
 
 	app.Get("gorm/book/:id", getBookByIdGorm)
 	app.Get("gorm/book/filter/:filter", getBookFilterGorm)
@@ -45,6 +48,25 @@ func main() {
 
 	app.Listen(":3000")
 }
+
+func register(context *fiber.Ctx) error {
+	user := new(model.User)
+	err := context.BodyParser(user)
+
+	if err != nil {
+		return context.Status(fiber.StatusBadRequest).JSON(err)
+	}
+
+	err = auth.CreateUser(dbContext, user)
+
+	if err != nil {
+		return context.Status(fiber.StatusBadRequest).JSON(err)
+	}
+
+	return context.SendStatus(fiber.StatusCreated)
+}
+
+// ---
 
 func createBookGorm(context *fiber.Ctx) error {
 	gormBookRequest := new(model.GormBook)
@@ -104,7 +126,11 @@ func updateBookGorm(context *fiber.Ctx) error {
 		return context.Status(fiber.StatusBadRequest).JSON(err)
 	}
 
-	result := dbContext.Save(gormBookRequest)
+	// update all entity
+	// result := dbContext.Save(gormBookRequest)
+
+	// update specifix column
+	result := dbContext.Model(gormBookRequest).Updates(gormBookRequest)
 
 	if result.Error != nil {
 		return context.Status(fiber.StatusBadRequest).JSON(result.Error)
