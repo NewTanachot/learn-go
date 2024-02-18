@@ -11,12 +11,17 @@ import (
 	"github.com/NewTanachot/learn-go/model"
 	"github.com/NewTanachot/learn-go/product"
 	"github.com/gofiber/fiber/v2"
+	"github.com/joho/godotenv"
 	"gorm.io/gorm"
 )
 
 var dbContext *gorm.DB
 
 func main() {
+
+	if err := godotenv.Load(); err != nil {
+		panic("load .env error")
+	}
 
 	dbContext = db.GormConnect()
 	db.Migrate(dbContext)
@@ -27,6 +32,7 @@ func main() {
 	app.Use(middleware.OuterMiddleware)
 
 	app.Post("register", register)
+	app.Post("login", login)
 
 	app.Get("gorm/book/:id", getBookByIdGorm)
 	app.Get("gorm/book/filter/:filter", getBookFilterGorm)
@@ -64,6 +70,33 @@ func register(context *fiber.Ctx) error {
 	}
 
 	return context.SendStatus(fiber.StatusCreated)
+}
+
+func login(context *fiber.Ctx) error {
+	user := new(model.User)
+	err := context.BodyParser(user)
+
+	if err != nil {
+		return context.Status(fiber.StatusBadRequest).JSON(err)
+	}
+
+	jwt, err := auth.LoginUser(dbContext, user)
+
+	if err != nil {
+		return context.Status(fiber.StatusUnauthorized).JSON(err)
+	}
+
+	response := fiber.Map{
+		"status": "success",
+		"jwt":    jwt,
+	}
+
+	// response := map[string]interface{}{
+	// 	"status": "success",
+	// 	"jwt":    jwt,
+	// }
+
+	return context.JSON(response)
 }
 
 // ---
@@ -129,7 +162,7 @@ func updateBookGorm(context *fiber.Ctx) error {
 	// update all entity
 	// result := dbContext.Save(gormBookRequest)
 
-	// update specifix column
+	// update specifix column in entity
 	result := dbContext.Model(gormBookRequest).Updates(gormBookRequest)
 
 	if result.Error != nil {

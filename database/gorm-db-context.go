@@ -2,19 +2,26 @@ package db
 
 import (
 	"fmt"
+	"log"
+	"os"
+	"time"
+
 	"github.com/NewTanachot/learn-go/model"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
-	"log"
-	"os"
-	"time"
 )
 
 func GormConnect() *gorm.DB {
+	dbData, err := getDbMetaData()
+
+	if err != nil {
+		panic(err)
+	}
+
 	// Connection string
 	connectionString := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable",
-		host, port, username, password, dbname)
+		dbData.Host, dbData.Port, dbData.UserName, dbData.Password, dbData.DbName)
 
 	gormLogger := logger.New(
 		log.New(os.Stdout, "\r\n", log.LstdFlags), // io writer

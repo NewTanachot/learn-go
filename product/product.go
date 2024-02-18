@@ -2,7 +2,7 @@ package product
 
 import (
 	"database/sql"
-	db "github.com/NewTanachot/learn-go/database"
+	// db "github.com/NewTanachot/learn-go/database"
 )
 
 type Product struct {
@@ -14,15 +14,15 @@ type Product struct {
 var dbContext *sql.DB
 
 // this init func is a special function in Go that is executed automatically upon package initialization
-func init() {
-	tempDb, connectionError := db.Connect()
+// func init() {
+// 	tempDb, connectionError := db.Connect()
 
-	if connectionError != nil {
-		panic(connectionError)
-	}
+// 	if connectionError != nil {
+// 		panic(connectionError)
+// 	}
 
-	dbContext = tempDb
-}
+// 	dbContext = tempDb
+// }
 
 func CreateProduct(product *Product) error {
 	_, insertError := dbContext.Exec(
