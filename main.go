@@ -1,12 +1,15 @@
 package main
 
 import (
+	"fmt"
 	"net/url"
 	"strconv"
+	"time"
 
 	"github.com/NewTanachot/learn-go/auth"
 	"github.com/NewTanachot/learn-go/book"
 	db "github.com/NewTanachot/learn-go/database"
+	"github.com/NewTanachot/learn-go/dto"
 	"github.com/NewTanachot/learn-go/middleware"
 	"github.com/NewTanachot/learn-go/model"
 	"github.com/NewTanachot/learn-go/product"
@@ -29,10 +32,13 @@ func main() {
 	app := fiber.New()
 
 	app.Use(middleware.InterMiddleware)
+	app.Use("gorm/book", middleware.AuthRequiredMiddleware)
 	app.Use(middleware.OuterMiddleware)
 
 	app.Post("register", register)
 	app.Post("login", login)
+
+	app.Post("gorm/author", createAuthorGrom)
 
 	app.Get("gorm/book/:id", getBookByIdGorm)
 	app.Get("gorm/book/filter/:filter", getBookFilterGorm)
@@ -86,6 +92,15 @@ func login(context *fiber.Ctx) error {
 		return context.Status(fiber.StatusUnauthorized).JSON(err)
 	}
 
+	cookie := fiber.Cookie{
+		Name:     "jwt",
+		Value:    jwt,
+		Expires:  time.Now().Add(time.Hour * 72),
+		HTTPOnly: true,
+	}
+
+	context.Cookie(&cookie)
+
 	response := fiber.Map{
 		"status": "success",
 		"jwt":    jwt,
@@ -101,15 +116,64 @@ func login(context *fiber.Ctx) error {
 
 // ---
 
-func createBookGorm(context *fiber.Ctx) error {
-	gormBookRequest := new(model.GormBook)
-	error := context.BodyParser(gormBookRequest)
+func createAuthorGrom(context *fiber.Ctx) error {
+	author := new(model.Author)
+	error := context.BodyParser(author)
 
 	if error != nil {
 		return context.SendStatus(fiber.StatusBadRequest)
 	}
 
-	dbContext.Create(gormBookRequest)
+	dbContext.Create(author)
+
+	return context.SendStatus(fiber.StatusCreated)
+}
+
+func createBookGorm(context *fiber.Ctx) error {
+	gormBookRequest := new(dto.BookRequestDto)
+	err := context.BodyParser(gormBookRequest)
+
+	fmt.Println(gormBookRequest)
+
+	if err != nil {
+		return context.SendStatus(fiber.StatusBadRequest)
+	}
+
+	user := new(model.User)
+	// println(user)
+	// println(&user)
+	queryResult := dbContext.First(&user, gormBookRequest.User.Id)
+
+	if queryResult.Error != nil {
+		return context.Status(fiber.StatusNotFound).JSON(queryResult.Error)
+	}
+
+	fmt.Println(*user)
+
+	author := new(model.Author)
+	// println(author)
+	// println(&author)
+	queryResult = dbContext.First(&author, gormBookRequest.Author.Id)
+
+	if queryResult.Error != nil {
+		return context.Status(fiber.StatusNotFound).JSON(queryResult.Error)
+	}
+
+	fmt.Println(*author)
+
+	book := model.GormBook{
+		Name:        gormBookRequest.Book.Name,
+		Description: gormBookRequest.Book.Description,
+		Price:       gormBookRequest.Book.Price,
+		User:        *user,
+		Author:      []model.Author{*author},
+	}
+
+	createErr := dbContext.Create(&book)
+
+	if createErr.Error != nil {
+		return context.Status(fiber.StatusBadRequest).JSON(createErr.Error)
+	}
 
 	return context.SendStatus(fiber.StatusCreated)
 }
@@ -120,6 +184,8 @@ func getBookFilterGorm(context *fiber.Ctx) error {
 
 	booksResponse := new([]model.GormBook)
 	queryResult := dbContext.
+		Preload("Author").
+		Preload("User").
 		Where("author = ?", filter).
 		Order("id desc").
 		Find(&booksResponse)
@@ -141,7 +207,10 @@ func getBookByIdGorm(context *fiber.Ctx) error {
 	}
 
 	bookResponse := new(model.GormBook)
-	queryResult := dbContext.First(&bookResponse, intId)
+	queryResult := dbContext.
+		Preload("Author").
+		Preload("User").
+		First(&bookResponse, intId)
 
 	if queryResult.Error != nil {
 		return context.Status(fiber.StatusBadRequest).JSON(queryResult.Error)

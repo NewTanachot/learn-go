@@ -4,10 +4,12 @@ import "gorm.io/gorm"
 
 type GormBook struct {
 	gorm.Model
-	Name        string `json:"name"`
-	Author      string `json:"author"`
-	Description string `json:"description"`
-	Price       uint   `json:"price"`
+	Name        string   `json:"name"`
+	Description string   `json:"description"`
+	Price       uint     `json:"price"`
+	UserId      uint     // if name UserID it will be default (no need to set foreignKey)
+	User        User     `json:"user" gorm:"foreignKey:UserId"`
+	Author      []Author `json:"author" gorm:"many2many:author_books"`
 }
 
 // gorm.Model

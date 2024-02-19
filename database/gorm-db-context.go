@@ -49,7 +49,7 @@ func GormConnect() *gorm.DB {
 
 func Migrate(db *gorm.DB) {
 
-	err := db.AutoMigrate(&model.GormBook{}, &model.User{})
+	err := db.AutoMigrate(&model.GormBook{}, &model.User{}, &model.Author{})
 
 	if err != nil {
 		panic(err)
