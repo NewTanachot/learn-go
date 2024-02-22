@@ -33,6 +33,7 @@ func main() {
 	app := fiber.New()
 
 	app.Get("goroutine/channel", goroutine.TestChannel)
+	app.Get("goroutine/waitgroup", goroutine.TestWaitGroup)
 	app.Get("goroutine/mutex", goroutine.TestMuTexLock)
 
 	app.Use(middleware.InterMiddleware)

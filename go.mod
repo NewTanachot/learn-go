@@ -4,6 +4,7 @@ go 1.21.6
 
 require (
 	github.com/andybalholm/brotli v1.0.5 // indirect
+	github.com/bradhe/stopwatch v0.0.0-20190618212248-a58cccc508ea
 	github.com/gofiber/fiber/v2 v2.52.0 // indirect
 	github.com/golang-jwt/jwt/v4 v4.5.0 // indirect
 	github.com/google/uuid v1.6.0 // indirect
