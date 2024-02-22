@@ -10,6 +10,7 @@ import (
 	"github.com/NewTanachot/learn-go/book"
 	db "github.com/NewTanachot/learn-go/database"
 	"github.com/NewTanachot/learn-go/dto"
+	"github.com/NewTanachot/learn-go/goroutine"
 	"github.com/NewTanachot/learn-go/middleware"
 	"github.com/NewTanachot/learn-go/model"
 	"github.com/NewTanachot/learn-go/product"
@@ -30,6 +31,9 @@ func main() {
 	db.Migrate(dbContext)
 
 	app := fiber.New()
+
+	app.Get("goroutine/channel", goroutine.TestChannel)
+	app.Get("goroutine/mutex", goroutine.TestMuTexLock)
 
 	app.Use(middleware.InterMiddleware)
 	app.Use("gorm/book", middleware.AuthRequiredMiddleware)
@@ -140,8 +144,6 @@ func createBookGorm(context *fiber.Ctx) error {
 	}
 
 	user := new(model.User)
-	// println(user)
-	// println(&user)
 	queryResult := dbContext.First(&user, gormBookRequest.User.Id)
 
 	if queryResult.Error != nil {
@@ -151,8 +153,6 @@ func createBookGorm(context *fiber.Ctx) error {
 	fmt.Println(*user)
 
 	author := new(model.Author)
-	// println(author)
-	// println(&author)
 	queryResult = dbContext.First(&author, gormBookRequest.Author.Id)
 
 	if queryResult.Error != nil {
