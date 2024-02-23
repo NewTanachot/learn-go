@@ -35,6 +35,8 @@ func main() {
 	app.Get("goroutine/channel", goroutine.TestChannel)
 	app.Get("goroutine/waitgroup", goroutine.TestWaitGroup)
 	app.Get("goroutine/mutex", goroutine.TestMuTexLock)
+	app.Get("goroutine/cond", goroutine.TestCond)
+	app.Get("goroutine/pubsub/:message", goroutine.TestPubSub)
 
 	app.Use(middleware.InterMiddleware)
 	app.Use("gorm/book", middleware.AuthRequiredMiddleware)
