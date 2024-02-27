@@ -38,6 +38,12 @@ func main() {
 	app.Get("goroutine/cond", goroutine.TestCond)
 	app.Get("goroutine/pubsub/:message", goroutine.TestPubSub)
 
+	// slice := make([]int, 5)
+
+	// fmt.Println(slice)
+	// fmt.Println(len(slice))
+	// fmt.Println(cap(slice))
+
 	app.Use(middleware.InterMiddleware)
 	app.Use("gorm/book", middleware.AuthRequiredMiddleware)
 	app.Use(middleware.OuterMiddleware)
@@ -218,6 +224,9 @@ func getBookByIdGorm(context *fiber.Ctx) error {
 	if queryResult.Error != nil {
 		return context.Status(fiber.StatusBadRequest).JSON(queryResult.Error)
 	}
+
+	// context.Response().Header.Del("Content-Type")
+	// return context.Send([]byte(bookResponse.Name))
 
 	return context.JSON(bookResponse)
 }

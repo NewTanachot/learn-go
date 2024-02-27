@@ -4,6 +4,9 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
+var V1 int
+var v2 int
+
 func TestChannel(context *fiber.Ctx) error {
 	channel1 := make(chan int)
 	channel2 := make(chan int)

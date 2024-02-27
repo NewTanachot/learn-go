@@ -35,3 +35,8 @@ func Connect() (*sql.DB, error) {
 
 	return dbContext, nil
 }
+
+func Close(db *sql.DB) {
+	db.Close()
+	println("db is closed")
+}
