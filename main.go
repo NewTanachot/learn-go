@@ -14,12 +14,15 @@ import (
 	"github.com/NewTanachot/learn-go/middleware"
 	"github.com/NewTanachot/learn-go/model"
 	"github.com/NewTanachot/learn-go/product"
+	custom_validator "github.com/NewTanachot/learn-go/validator"
+	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
 	"github.com/joho/godotenv"
 	"gorm.io/gorm"
 )
 
 var dbContext *gorm.DB
+var customValidator *validator.Validate
 
 func main() {
 
@@ -31,6 +34,9 @@ func main() {
 	db.Migrate(dbContext)
 
 	app := fiber.New()
+
+	customValidator = validator.New()
+	custom_validator.CustomValidatorRegistry(customValidator)
 
 	app.Get("goroutine/channel", goroutine.TestChannel)
 	app.Get("goroutine/waitgroup", goroutine.TestWaitGroup)
@@ -387,10 +393,17 @@ func getBooks(context *fiber.Ctx) error {
 
 func insertBook(context *fiber.Ctx) error {
 	newBook := new(book.Book)
-	error := context.BodyParser(newBook)
+	err := context.BodyParser(newBook)
 
-	if error != nil {
+	if err != nil {
 		return context.SendStatus(fiber.StatusBadRequest)
+	}
+
+	err = customValidator.Struct(newBook)
+
+	if err != nil {
+		return context.Status(fiber.StatusBadRequest).
+			JSON(fiber.Map{"error": err.Error()})
 	}
 
 	bookResponse := book.InsertBook(newBook)

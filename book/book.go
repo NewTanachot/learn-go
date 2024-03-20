@@ -2,13 +2,20 @@ package book
 
 import (
 	"fmt"
+
 	"github.com/google/uuid"
 )
 
+// type User struct {
+// 	Email    string `json:"email" validate:"required,email"`
+// 	Fullname string `json:"fullname" validate:"required,fullname"`
+// 	Age      int    `json:"age" validate:"required,numeric,min=1"`
+// }
+
 type Book struct {
-	Id    string `json:"id"`
-	Name  string `json:"name"`
-	Title string `json:"title"`
+	Id    string `json:"id" validate:"required"`
+	Name  string `json:"name" validate:"required,fullname"`
+	Title string `json:"title" validate:"required"`
 }
 
 // global var scope has (STATE)
