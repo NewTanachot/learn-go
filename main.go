@@ -214,6 +214,10 @@ func getBookFilterGorm(context *fiber.Ctx) error {
 
 func getBookByIdGorm(context *fiber.Ctx) error {
 
+	// test debugger
+	a := 10
+	println(a)
+
 	id := context.Params("id")
 	intId, err := strconv.Atoi(id)
 
