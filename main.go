@@ -77,7 +77,23 @@ func main() {
 	app.Put("product", updateProduct)
 	app.Delete("product/:id", deleteProduct)
 
+	app.Post("student", studentValidator)
+
 	app.Listen(":3000")
+}
+
+func studentValidator(context *fiber.Ctx) error {
+	student := new(model.Student)
+
+	if err := context.BodyParser(student); err != nil {
+		return context.Status(fiber.StatusBadRequest).JSON(err)
+	}
+
+	if err := customValidator.Struct(student); err != nil {
+		return context.Status(fiber.StatusBadRequest).JSON(err)
+	}
+
+	return context.JSON(student)
 }
 
 func register(context *fiber.Ctx) error {
