@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"sync"
 	"time"
 
 	"github.com/NewTanachot/learn-go/model"
@@ -12,39 +13,48 @@ import (
 	"gorm.io/gorm/logger"
 )
 
-func GormConnect() *gorm.DB {
-	dbData, err := getDbMetaData()
+var (
+	gormCtx *gorm.DB
+	once    sync.Once
+)
 
-	if err != nil {
-		panic(err)
-	}
+func GormSingletonConnection() *gorm.DB {
 
-	// Connection string
-	connectionString := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable",
-		dbData.Host, dbData.Port, dbData.UserName, dbData.Password, dbData.DbName)
+	// use once keyword to do singleton implementation of database connection pool
+	once.Do(func() {
+		dbData, err := getDbMetaData()
 
-	gormLogger := logger.New(
-		log.New(os.Stdout, "\r\n", log.LstdFlags), // io writer
-		logger.Config{
-			SlowThreshold: time.Second, // Slow SQL threshold
-			LogLevel:      logger.Info, // Log level
-			Colorful:      true,        // Enable color
-		},
-	)
+		if err != nil {
+			panic(err)
+		}
 
-	gormOption := gorm.Config{
-		Logger: gormLogger,
-	}
+		// Connection string
+		connectionString := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable",
+			dbData.Host, dbData.Port, dbData.UserName, dbData.Password, dbData.DbName)
 
-	db, err := gorm.Open(postgres.Open(connectionString), &gormOption)
+		gormLogger := logger.New(
+			log.New(os.Stdout, "\r\n", log.LstdFlags), // io writer
+			logger.Config{
+				SlowThreshold: time.Second, // Slow SQL threshold
+				LogLevel:      logger.Info, // Log level
+				Colorful:      true,        // Enable color
+			},
+		)
 
-	if err != nil {
-		panic("Fail to connect GORM DbContext")
-	}
+		gormOption := gorm.Config{
+			Logger: gormLogger,
+		}
 
-	println("Connect to GORM Success")
+		gormCtx, err = gorm.Open(postgres.Open(connectionString), &gormOption)
 
-	return db
+		if err != nil {
+			panic("Fail to connect GORM DbContext")
+		}
+
+		println("Connect to GORM Success")
+	})
+
+	return gormCtx
 }
 
 func Migrate(db *gorm.DB) {
