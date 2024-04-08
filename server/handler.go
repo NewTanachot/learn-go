@@ -4,8 +4,7 @@ import (
 	"net/url"
 	"strconv"
 
-	book "github.com/NewTanachot/learn-go/Book"
-	"github.com/NewTanachot/learn-go/model"
+	"github.com/NewTanachot/learn-go/book"
 	"github.com/NewTanachot/learn-go/product"
 	cvalidator "github.com/NewTanachot/learn-go/validator"
 	"github.com/gofiber/fiber/v2"
@@ -165,21 +164,4 @@ func deleteBook(context *fiber.Ctx) error {
 	result := context.JSON(idResponse)
 
 	return result
-}
-
-// -=-=-=-=-=-=-=-=-=-=-=- [ Test Validator ] -=-=-=-=-=-=-=-=-=-=-=-
-
-func studentValidator(context *fiber.Ctx) error {
-	student := new(model.Student)
-
-	if err := context.BodyParser(student); err != nil {
-		return context.Status(fiber.StatusBadRequest).JSON(err)
-	}
-
-	customValidator := cvalidator.SingletonSetUp()
-	if err := customValidator.Struct(student); err != nil {
-		return context.Status(fiber.StatusBadRequest).JSON(err)
-	}
-
-	return context.JSON(student)
 }

@@ -5,6 +5,7 @@ import (
 	gormbook "github.com/NewTanachot/learn-go/gorm_book"
 	"github.com/NewTanachot/learn-go/goroutine"
 	"github.com/NewTanachot/learn-go/middleware"
+	"github.com/NewTanachot/learn-go/student"
 	cvalidator "github.com/NewTanachot/learn-go/validator"
 	"github.com/gofiber/fiber/v2"
 )
@@ -47,7 +48,7 @@ func Setup() *fiber.App {
 	app.Put("product", updateProduct)
 	app.Delete("product/:id", deleteProduct)
 
-	app.Post("student", studentValidator)
+	app.Post("student", student.StudentValidator)
 
 	return app
 }
