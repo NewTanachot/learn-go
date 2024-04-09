@@ -14,8 +14,22 @@ import (
 
 func TestStudentvalidator(t *testing.T) {
 	app := server.Setup()
+	tests := getStudentValidateRequestMock()
 
-	tests := []FiberTestModel[model.Student]{
+	for _, test := range tests {
+		t.Run(test.description, func(t *testing.T) {
+			reqBody, _ := json.Marshal(test.requestBody)
+			req := httptest.NewRequest("POST", "/student", bytes.NewReader(reqBody))
+			req.Header.Set("Content-Type", "application/json")
+			resp, _ := app.Test(req)
+
+			assert.Equal(t, test.expectStatus, resp.StatusCode)
+		})
+	}
+}
+
+func getStudentValidateRequestMock() []FiberTestModel[model.Student] {
+	return []FiberTestModel[model.Student]{
 		{
 			description: "Valid input",
 			requestBody: &model.Student{
@@ -61,16 +75,5 @@ func TestStudentvalidator(t *testing.T) {
 			},
 			expectStatus: fiber.StatusBadRequest,
 		},
-	}
-
-	for _, test := range tests {
-		t.Run(test.description, func(t *testing.T) {
-			reqBody, _ := json.Marshal(test.requestBody)
-			req := httptest.NewRequest("POST", "/student", bytes.NewReader(reqBody))
-			req.Header.Set("Content-Type", "application/json")
-			resp, _ := app.Test(req)
-
-			assert.Equal(t, test.expectStatus, resp.StatusCode)
-		})
 	}
 }
